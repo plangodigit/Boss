@@ -1,0 +1,119 @@
+<!DOCTYPE html><html lang="mr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BOSS</title><meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.png">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+body{margin:0;background:#0a0a0a;color:#f5f0e1;font:16px system-ui,sans-serif;padding-bottom:76px}
+h1,h2{color:#d4af37;margin:8px 0}
+header{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid #d4af37;font-size:13px}
+#m{padding:12px;max-width:640px;margin:auto}
+.cd{background:#1a1a1a;border:1px solid #3a3320;border-radius:12px;padding:12px;margin:10px 0}
+input,select,textarea,button{font:inherit;border-radius:8px;border:1px solid #d4af37;background:#111;color:#f5f0e1;padding:10px;margin:4px 0;width:100%;box-sizing:border-box}
+button{background:#d4af37;color:#000;font-weight:700;width:auto;margin:4px 4px 0 0}
+.big{width:100%;padding:18px;font-size:20px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#111;border-top:1px solid #d4af37;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;color:#d4af37;border:0;border-radius:0;margin:0}
+nav .on{background:#d4af37;color:#000}
+#ov,#sp{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;text-align:center;z-index:9;flex-direction:column}
+#ov{background:#000e;font-size:22px;padding:20px}
+[hidden]{display:none!important}
+.bar{background:#d4af37;height:10px;border-radius:5px}
+a{color:#d4af37}
+@media print{body{background:#fff;color:#000}nav,header,.np{display:none}.cd{background:#fff;border:1px solid #999}h1,h2{color:#000}}
+</style></head><body>
+<div id="sp"><svg width="120" height="90" viewBox="0 0 120 90"><path d="M10 75 L5 25 L35 50 L60 10 L85 50 L115 25 L110 75Z" fill="#d4af37"/><rect x="10" y="78" width="100" height="8" fill="#d4af37"/></svg>
+<h1 style="font-size:56px;letter-spacing:8px">BOSS</h1><h2>बॉस</h2><p style="color:#d4af37">तुमचा वेळ, तुमचा सहाय्यक</p></div>
+<div id="ov" hidden></div><div id="a"></div>
+<script>
+// ===== Firebase config: Firebase Console > Project settings > Your apps (Web) =====
+const FB={apiKey:"YOUR_API_KEY",authDomain:"YOUR_PROJECT.firebaseapp.com",projectId:"YOUR_PROJECT_ID",appId:"YOUR_APP_ID"};
+firebase.initializeApp(FB);const db=firebase.firestore(),$=s=>document.querySelector(s);
+const KS='today add bday rep title date time place type who notes leave rem save att skip post canc go ready name pin code role boss asst drv new login out why wish rem2 pdf month pend'.split(' ');
+const L={
+mr:'आज|नवीन|वाढदिवस|अहवाल|शीर्षक|तारीख|वेळ|ठिकाण|प्रकार|भेटणारे|नोट्स|निघायची वेळ|आधी (मिनिटे)|जतन करा|अटेंड केले|स्किप|पुढे ढकला|रद्द|निघतो|मी तयार आहे|नाव|PIN|टीम कोड|भूमिका|बॉस|असिस्टंट|ड्रायव्हर|नवीन टीम|लॉगिन|बाहेर|कारण|शुभेच्छा|बॉसला रिमाइंड|PDF|महिना|बाकी'.split('|'),
+hi:'आज|नया|जन्मदिन|रिपोर्ट|शीर्षक|तारीख|समय|स्थान|प्रकार|मिलने वाले|नोट्स|निकलने का समय|पहले (मिनट)|सेव करें|अटेंड किया|स्किप|आगे बढ़ाएं|रद्द|निकलता हूँ|मैं तैयार हूँ|नाम|PIN|टीम कोड|भूमिका|बॉस|असिस्टेंट|ड्राइवर|नई टीम|लॉगिन|बाहर|कारण|शुभकामना|बॉस को याद दिलाएं|PDF|महीना|बाकी'.split('|'),
+en:'Today|New|Birthdays|Report|Title|Date|Time|Place|Type|Meet|Notes|Leave time|Remind before (min)|Save|Attended|Skipped|Postpone|Cancelled|I\'m leaving|I\'m ready|Name|PIN|Team code|Role|Boss|Assistant|Driver|New team|Login|Logout|Reason|Wish|Remind boss|PDF|Month|Pending'.split('|')};
+let lg=localStorage.lg||'mr',S=JSON.parse(localStorage.S||'null'),tab='today',E=[],B=[],M={},LS={},ac,bt;
+const t=k=>L[lg][KS.indexOf(k)],esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ld=d=>d.toLocaleDateString('en-CA'),col=()=>db.collection('teams').doc(S.c);
+const TY={meeting:'🤝 मीटिंग/Meeting',function:'🎉 फंक्शन/Function',travel:'🚗 प्रवास/Travel',other:'📌 इतर/Other'};
+const H=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+document.addEventListener('click',()=>{try{ac=ac||new AudioContext()}catch(e){}},{once:true});
+setTimeout(()=>$('#sp').hidden=1,1800);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+
+async function auth(cr){
+ const n=$('#n').value.trim().replace(/[.\/\s]/g,'_'),p=$('#p').value;let c=$('#c').value.trim().toUpperCase(),r=$('#r').value;
+ if(!n||!/^\d{4}$/.test(p))return alert(t('name')+' + 4 PIN');
+ if(cr)c=Math.random().toString(36).slice(2,8).toUpperCase();
+ const R=db.collection('teams').doc(c),h=await H(c+n+p);
+ if(cr){await R.set({m:{[n]:{r:'boss',h}}});r='boss';alert(t('code')+': '+c)}
+ else{const d=await R.get();if(!d.exists)return alert(t('code')+'?');const m=(d.data().m||{})[n];
+  if(m){if(m.h!=h)return alert('PIN?');r=m.r}else{if(r=='boss')r='asst';await R.update({['m.'+n]:{r,h}})}}
+ S={c,n,r};localStorage.S=JSON.stringify(S);localStorage.seen=Date.now();
+ try{Notification.requestPermission()}catch(e){}
+ start()}
+const out=()=>{localStorage.removeItem('S');location.reload()};
+
+function start(){
+ const R=col();
+ R.onSnapshot(d=>{const x=d.data()||{};M=x.m||{};LS=x.l||{};S.bn=Object.keys(M).find(k=>M[k].r=='boss');draw()});
+ const seen=()=>{if(S.r!='boss')R.update({['l.'+S.n]:{at:Date.now(),r:S.r}})};seen();
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)seen()});
+ R.collection('e').onSnapshot(s=>{E=s.docs.map(d=>({id:d.id,...d.data()}));draw()});
+ R.collection('b').onSnapshot(s=>{B=s.docs.map(d=>({id:d.id,...d.data()}));draw()});
+ R.collection('s').orderBy('at','desc').limit(1).onSnapshot(s=>{const d=s.docs[0];if(!d)return;const x=d.data();
+  if(x.at>(+localStorage.seen||0)&&x.by!=S.n){localStorage.seen=x.at;if(x.to==S.r)ring(x.msg)}});
+ setInterval(tick,20000);draw(1)}
+const send=(to,msg)=>col().collection('s').add({to,msg,by:S.n,at:Date.now()});
+const go=()=>{send('drv','🚗 '+S.n+': '+t('go'));alert('✓')},rdy=()=>{send('boss','✅ '+t('ready')+' – '+S.n);alert('✓')};
+
+const beep=()=>{try{ac=ac||new AudioContext();const o=ac.createOscillator();o.connect(ac.destination);o.frequency.value=880;o.start();o.stop(ac.currentTime+.4)}catch(e){}};
+function ring(m){const o=$('#ov');o.innerHTML=`<h2>🔔</h2><p>${esc(m)}</p><button class=big onclick="stp()">OK</button>`;o.hidden=0;
+ clearInterval(bt);bt=setInterval(()=>{beep();navigator.vibrate&&navigator.vibrate(300)},1500);beep();
+ if(window.Notification&&Notification.permission=='granted')navigator.serviceWorker.ready.then(r=>r.showNotification('BOSS',{body:m,vibrate:[300,100,300],requireInteraction:true}))}
+const stp=()=>{clearInterval(bt);$('#ov').hidden=1};
+
+function tick(){const n=Date.now(),F=JSON.parse(localStorage.F||'{}');
+ E.filter(e=>e.st=='p').forEach(e=>{let at,m;
+  if(S.r=='drv'){if(!e.lv)return;at=new Date(e.d+'T'+e.lv).getTime();m='🚗 '+e.ti+' '+e.lv}
+  else{at=new Date(e.d+'T'+e.tm).getTime()-(e.rm||15)*6e4;m='⏰ '+e.ti+' '+e.tm}
+  const k=e.id+S.r+e.d+e.tm;if(n>=at&&n-at<6e5&&!F[k]){F[k]=1;ring(m)}});
+ const td=new Date(),md=ld(td).slice(5);
+ B.filter(b=>b.md==md&&(S.r=='asst'||(S.r=='boss'&&b.s))).forEach(b=>{const k='b'+b.id+td.getFullYear();if(!F[k]){F[k]=1;ring('🎂 '+b.n)}});
+ localStorage.F=JSON.stringify(F)}
+
+const lsel=()=>`<select onchange="lg=localStorage.lg=this.value;draw(1)" style="width:auto">${['mr','hi','en'].map(x=>`<option ${x==lg?'selected':''}>${x}</option>`).join('')}</select>`;
+const st=e=>({p:t('pend'),a:'✅ '+t('att'),s:'⏭ '+t('skip')+(e.rs?': '+esc(e.rs):''),c:'❌ '+t('canc')}[e.st]||'')+(e.pc?' 🔁 '+t('post'):'');
+const card=e=>`<div class=cd><b>${esc(e.ti)}</b> <small>${TY[e.ty]||''}</small><div>📅 ${e.d} ⏰ ${e.tm}${e.lv?' 🚗 '+e.lv:''}${e.pl?' 📍'+(/^http/.test(e.pl)?`<a href="${esc(e.pl)}">map</a>`:esc(e.pl)):''}</div>${e.wh?'<div>👤 '+esc(e.wh)+'</div>':''}${e.nt?'<div>'+esc(e.nt)+'</div>':''}<div>${st(e)}</div>${S.r!='drv'&&e.st=='p'?['a','s','d','c'].map((x,i)=>`<button onclick="sset('${e.id}','${x}')">${t(['att','skip','post','canc'][i])}</button>`).join(''):''}<button onclick="ics('${e.id}')">⏰ 📱</button></div>`;
+function sset(id,s){const u={st:s};
+ if(s=='s')u.rs=prompt(t('why'))||'';
+ if(s=='d'){const v=prompt('YYYY-MM-DD HH:MM');if(!v)return;const[a,b]=v.trim().split(' ');u.d=a;u.tm=b;u.st='p';u.pc=firebase.firestore.FieldValue.increment(1)}
+ col().collection('e').doc(id).update(u)}
+function sv(){const g=i=>$('#'+i).value;if(!g('ti')||!g('d')||!g('tm'))return alert('!');
+ col().collection('e').add({ti:g('ti'),d:g('d'),tm:g('tm'),pl:g('pl'),ty:g('ty'),wh:g('wh'),nt:g('nt'),lv:g('lv'),rm:+g('rm')||15,st:'p',by:S.n});tab='today';draw(1)}
+function ics(id){const e=E.find(x=>x.id==id),f=(d,h)=>d.replace(/-/g,'')+'T'+h.replace(':','')+'00',a=S.r=='drv'&&e.lv?e.lv:e.tm;
+ const x=['BEGIN:VCALENDAR','VERSION:2.0','BEGIN:VEVENT','UID:'+id+'@boss','DTSTAMP:'+f(ld(new Date()),'00:00')+'Z','DTSTART:'+f(e.d,a),'SUMMARY:'+e.ti,'LOCATION:'+(e.pl||''),'BEGIN:VALARM','TRIGGER:-PT'+(S.r=='drv'?10:e.rm||15)+'M','ACTION:DISPLAY','DESCRIPTION:'+e.ti,'END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+ const l=document.createElement('a');l.href=URL.createObjectURL(new Blob([x],{type:'text/calendar'}));l.download='boss.ics';l.click()}
+
+const vt=()=>`<button class=big onclick="${S.r=='drv'?'rdy()':'go()'}">${S.r=='drv'?'✅ '+t('ready'):'🚗 '+t('go')}</button>`+E.filter(e=>e.d>=ld(new Date())).sort((x,y)=>(x.d+x.tm).localeCompare(y.d+y.tm)).map(card).join('');
+const va=()=>`<h2>${t('add')}</h2><input id=ti placeholder="${t('title')}"><input id=d type=date value="${ld(new Date())}"><input id=tm type=time><input id=pl placeholder="${t('place')} / map link"><select id=ty>${Object.entries(TY).filter(([k])=>S.r!='drv'||k=='travel').map(([k,v])=>`<option value=${k}>${v}</option>`).join('')}</select><input id=wh placeholder="${t('who')}"><textarea id=nt placeholder="${t('notes')}"></textarea><label>${t('leave')}</label><input id=lv type=time><input id=rm type=number placeholder="${t('rem')} (15)"><button onclick="sv()">${t('save')}</button>`;
+const dl=b=>{const n=new Date();n.setHours(0,0,0,0);const[m,d]=b.md.split('-');let x=new Date(n.getFullYear(),m-1,d);if(x<n)x.setFullYear(x.getFullYear()+1);return Math.round((x-n)/864e5)};
+function sb(){const g=i=>$('#'+i).value;if(!g('bn')||!g('bd'))return;col().collection('b').add({n:g('bn'),md:g('bd').slice(5),dt:g('bd'),rl:g('br'),ph:g('bp'),s:$('#bs').checked});draw(1)}
+const wa=b=>{const p=(b.ph||'').replace(/\D/g,'');return 'https://wa.me/'+(p.length==10?'91'+p:p)+'?text='+encodeURIComponent('🎂 जन्मदिनाच्या हार्दिक शुभेच्छा '+b.n+'!')};
+const vb=()=>`<h2>🎂 ${t('bday')}</h2>`+(S.r=='asst'?`<div class=cd><input id=bn placeholder="${t('name')}"><input id=bd type=date><input id=br placeholder="${t('who')}"><input id=bp type=tel placeholder="WhatsApp"><label><input id=bs type=checkbox style="width:auto"> ⭐</label><button onclick="sb()">${t('save')}</button></div>`:'')+B.sort((x,y)=>dl(x)-dl(y)).map(b=>`<div class=cd>${b.s?'⭐ ':''}<b>${esc(b.n)}</b> ${esc(b.rl)}<div>📅 ${b.dt} · ${dl(b)}d</div>${S.r=='asst'?`<button onclick="send('boss','🎂 ${esc(b.n)}')">${t('rem2')}</button><button onclick="col().collection('b').doc('${b.id}').delete()">✕</button>`:''}${b.ph?`<a href="${wa(b)}"><button>${t('wish')}</button></a>`:''}</div>`).join('');
+function vr(){const m=window.mo||ld(new Date()).slice(0,7),X=E.filter(e=>e.d.startsWith(m)).sort((a,b)=>(a.d+a.tm).localeCompare(b.d+b.tm)),c=s=>X.filter(e=>e.st==s).length,n=X.length,po=X.filter(e=>e.pc>0).length;
+ return `<h2>👑 ${esc(S.bn||'')} – ${t('rep')}</h2><input class=np type=month value="${m}" onchange="mo=this.value;draw(1)"><div class=cd>${t('att')}: ${c('a')} (${n?Math.round(c('a')*100/n):0}%) · ${t('skip')}: ${c('s')} · ${t('post')}: ${po} · ${t('canc')}: ${c('c')} · ${t('pend')}: ${c('p')} · Total: ${n}</div>`+Object.entries(TY).map(([k,v])=>{const a=X.filter(e=>e.ty==k);return `<div>${v}: ${a.filter(e=>e.st=='a').length}/${a.length}<div class=bar style="width:${n?a.length*100/n:0}%"></div></div>`}).join('')+X.map(e=>`<div class=cd>${e.d} ${e.tm} – <b>${esc(e.ti)}</b> – ${st(e)}</div>`).join('')+`<p>सही / Sign: ____________</p><button class=np onclick="print()">📄 ${t('pdf')}</button>`}
+
+const vs=()=>`<h2>🔒 शेवटचे ओपन / Last opened</h2>`+(Object.keys(M).filter(k=>M[k].r!='boss').map(k=>{const l=LS[k];return `<div class=cd><b>${esc(k)}</b> · ${t(M[k].r)}<div>${l?'🕒 '+new Date(l.at).toLocaleString():'—'}</div></div>`}).join('')||'—');
+function draw(f){
+ if(!f&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;
+ const a=$('#a');
+ if(!S){a.innerHTML=`<div id=m><h1>👑 BOSS</h1><input id=c placeholder="${t('code')}"><input id=n placeholder="${t('name')}"><input id=p type=password inputmode=numeric maxlength=4 placeholder="${t('pin')}"><select id=r><option value=asst>${t('asst')}</option><option value=drv>${t('drv')}</option></select><button onclick="auth(0)">${t('login')}</button><button onclick="auth(1)">${t('new')} (${t('boss')})</button><br>${lsel()}</div>`;return}
+ const T=[['today','📅'],['add','➕'],...(S.r!='drv'?[['bday','🎂'],['rep','📊']]:[]),...(S.r=='boss'?[['seen','🔒']]:[])];
+ const v={today:vt,add:va,bday:vb,rep:vr,seen:vs}[tab]();
+ a.innerHTML=`<header><b>👑 BOSS</b><span>${esc(S.n)} · ${t(S.r)} · ${S.c}</span><span>${lsel()}<button onclick="out()">⏻</button></span></header><div id=m>${v}</div><nav>${T.map(([k,i])=>`<button class="${k==tab?'on':''}" onclick="tab='${k}';draw(1)">${i} ${t(k)||''}</button>`).join('')}</nav>`}
+if(S)start();else draw(1);
+</script></body></html>
